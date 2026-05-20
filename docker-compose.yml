@@ -4,7 +4,6 @@ services:
   koha_db:
     image: mariadb:10.11
     container_name: koha_db
-    command: --database=koha_library
     environment:
       MARIADB_ROOT_PASSWORD: root_password_easy_test
       MARIADB_USER: koha_library
