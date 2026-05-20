@@ -22,8 +22,8 @@ services:
     container_name: koha_app
     restart: always
     ports:
-      - "80:80"     # Interfaz Pública (OPAC)
-      - "8080:8080" # Interfaz del Staff / Administración
+      - "8081:80"     # Interfaz Pública (OPAC)
+      - "8082:8080" # Interfaz del Staff / Administración
     volumes:
       - koha_app_sites:/etc/koha/sites
       - koha_app_var:/var/lib/koha
