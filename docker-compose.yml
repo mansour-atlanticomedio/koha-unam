@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  koha_db:
+    image: mariadb:10.11
+    container_name: koha_db
+    command: --database=koha_library
+    environment:
+      MARIADB_ROOT_PASSWORD: root_password_easy_test
+      MARIADB_USER: koha_library
+      MARIADB_PASSWORD: koha_password_123
+      MARIADB_DATABASE: koha_library
+    volumes:
+      - koha_db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - koha_network
+
+  koha_app:
+    build: .
+    container_name: koha_app
+    restart: always
+    ports:
+      - "80:80"     # Interfaz Pública (OPAC)
+      - "8080:8080" # Interfaz del Staff / Administración
+    volumes:
+      - koha_app_sites:/etc/koha/sites
+      - koha_app_var:/var/lib/koha
+    depends_on:
+      - koha_db
+    networks:
+      - koha_network
+
+volumes:
+  koha_db_data:
+  koha_app_sites:
+  koha_app_var:
+
+networks:
+  koha_network:
+    driver: bridge
