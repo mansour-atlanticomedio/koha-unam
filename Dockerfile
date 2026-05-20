@@ -37,36 +37,37 @@ RUN a2enmod rewrite cgi headers proxy_http
 # Exponer los puertos: 80 para la interfaz pública, 8080 para la intranet del staff
 EXPOSE 80 8080
 
-# Crear un script de entrada para configurar e iniciar la instancia dinámicamente
 RUN tee /usr/local/bin/entrypoint.sh <<'EOF'
 #!/bin/bash
 set -e
 
-# Modificar puertos de Apache si es necesario para separar Intranet y OPAC por puerto
-# Forzamos a Apache a escuchar en el 8080 para la interfaz de administración
+# 1. Configurar Apache para escuchar en 8080 (Staff) y 80 (OPAC)
 if ! grep -q "Listen 8080" /etc/apache2/ports.conf; then
     echo "Listen 8080" >> /etc/apache2/ports.conf
 fi
 
-# Ajustar koha-sites.conf antes de crear la instancia
-sed -i 's/INTRAPORT="80"/INTRAPORT="8080"/' /etc/koha/koha-sites.conf
-sed -i 's/OPACPORT="80"/OPACPORT="80"/' /etc/koha/koha-sites.conf
-sed -i 's/DOMAIN=".localhost"/DOMAIN=""/' /etc/koha/koha-sites.conf
-
-# Crear la instancia de Koha si no existe ya
-if [ ! -d "/etc/koha/sites/library" ]; then
-    echo "Creando instancia de Koha: library..."
-    # Usamos --request-db porque la base de datos está en otro contenedor (MariaDB)
-    koha-create --request-db library
+# 2. Crear la instancia si no existe
+if [ ! -d "/etc/koha/sites/${KOHA_INSTANCE}" ]; then
+    echo "Creando instancia de Koha: ${KOHA_INSTANCE}..."
+    koha-create --request-db "${KOHA_INSTANCE}"
+    
+    # 3. ¡ESTA ES LA CLAVE! Inyectar la configuración de la DB real
+    CONF_FILE="/etc/koha/sites/${KOHA_INSTANCE}/koha-conf.xml"
+    
+    sed -i "s/<db_scheme>mysql<\/db_scheme>/<db_scheme>mysql<\/db_scheme>/g" $CONF_FILE
+    sed -i "s/<database>koha_${KOHA_INSTANCE}<\/database>/<database>${KOHA_DBNAME}<\/database>/g" $CONF_FILE
+    sed -i "s/<hostname>localhost<\/hostname>/<hostname>${KOHA_DBHOST}<\/hostname>/g" $CONF_FILE
+    sed -i "s/<user>koha_${KOHA_INSTANCE}<\/user>/<user>${KOHA_DBUSER}<\/user>/g" $CONF_FILE
+    sed -i "s/<pass>.*<\/pass>/<pass>${KOHA_DBPASS}<\/pass>/g" $CONF_FILE
 fi
 
-# Iniciar servicios de fondo de Koha y Apache
-echo "Iniciando servicios..."
+# 4. Habilitar el sitio en Apache (Koha crea el symlink pero a veces hay que forzarlo)
+a2ensite "${KOHA_INSTANCE}"
+
+# 5. Iniciar servicios
 service koha-common start
-# Mantener el contenedor vivo inspeccionando el log de Apache
 exec apache2ctl -D FOREGROUND
 EOF
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

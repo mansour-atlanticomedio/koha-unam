@@ -26,11 +26,11 @@ services:
     environment:
       - KOHA_INSTANCE=library
       - KOHA_ADMINUSER=admin
-      - KOHA_ADMINPASS=password_seguro_123
+      - KOHA_ADMINPASS=koha_123
       - KOHA_DBHOST=koha_db
       - KOHA_DBNAME=koha_library
       - KOHA_DBUSER=koha_library
-      - KOHA_DBPASS=koha_password_123
+      - KOHA_DBPASS=koha_123
       # Esta línea es vital para que no dé el error 500 al inicio
       - KOHA_CONF=/etc/koha/sites/library/koha-conf.xml 
     volumes:
