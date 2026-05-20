@@ -21,18 +21,15 @@ services:
     container_name: koha_app
     restart: always
     ports:
-      - "8081:80"     # OPAC
-      - "8082:8080"   # Intranet/Admin
+      - "8081:80"     # Interfaz Pública (OPAC)
+      - "8082:8080"   # Interfaz del Staff / Administración
     environment:
+      # Variables usadas por nuestro entrypoint.sh personalizado
       - KOHA_INSTANCE=library
-      - KOHA_ADMINUSER=admin
-      - KOHA_ADMINPASS=koha_123
       - KOHA_DBHOST=koha_db
       - KOHA_DBNAME=koha_library
       - KOHA_DBUSER=koha_library
-      - KOHA_DBPASS=koha_123
-      # Esta línea es vital para que no dé el error 500 al inicio
-      - KOHA_CONF=/etc/koha/sites/library/koha-conf.xml 
+      - KOHA_DBPASS=koha_password_123
     volumes:
       - koha_app_sites:/etc/koha/sites
       - koha_app_var:/var/lib/koha
